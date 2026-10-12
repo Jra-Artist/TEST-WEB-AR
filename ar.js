@@ -39,10 +39,10 @@
     // ---------- Assets (parts.json + GLB files) ----------
     let CFG = null, parts = [], glows = [], assets = null;
     const gltfLoader = new THREE.GLTFLoader();
-    const loadGLB = url => new Promise((res, rej) => gltfLoader.load(url, g => res(g.scene), undefined, rej));
+    const loadGLB = url => new Promise((res, rej) => gltfLoader.load(url, g => res(g.scene), undefined, () => rej(new Error('could not load ' + url))));
     function loadAssets() {
         if (assets) return assets;
-        assets = fetch('parts.json').then(r => { if (!r.ok) throw new Error('parts.json ' + r.status); return r.json(); }).then(async cfg => {
+        assets = fetch('parts.json').then(r => { if (!r.ok) throw new Error('could not load parts.json (HTTP ' + r.status + ')'); return r.json(); }).then(async cfg => {
             const [board, ...objs] = await Promise.all([loadGLB(cfg.board.file), ...cfg.parts.map(p => loadGLB(p.file))]);
             CFG = cfg; tilt.rotation.x = cfg.tiltDeg * Math.PI / 180;
             boardRoot.add(board);
@@ -247,7 +247,7 @@
         loadAssets().then(resetScenario).catch(err => {
             console.error('Model load failed:', err);
             liveText.innerText = '⚠️ MODELS FAILED TO LOAD';
-            setStep('Could not load the 3D models. Serve this folder over http(s); it will not work from file://.', '#f44336');
+            setStep('Failed: ' + err.message + '. Make sure parts.json and the models/ folder are uploaded next to index.html.', '#f44336');
         });
 
         if (!handsInstance) {
